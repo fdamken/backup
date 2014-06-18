@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [[ ${EUID} != 0 ]]; then
+    echo "E: Execution not possible, are you root?"
+    exit 3
+fi
+
+# installation directory
+DIR="/opt/backup"
+
+CMDS=("backup" "auto-backup")
+
+case $1 in
+	install)
+		mkdir -p "$DIR"
+		chown -R root:root "$DIR"
+
+		for CMD in "${CMDS[@]}"
+		do
+			cp -v "$(pwd)/$CMD.sh" "$DIR"
+			chmod +x "$DIR/$CMD.sh"
+		done
+
+		for CMD in "${CMDS[@]}"
+		do
+			update-alternatives --install "/usr/bin/$CMD" $CMD "$DIR/$CMD.sh" 1
+			update-alternatives --set $CMD "$DIR/$CMD.sh"
+		done
+		;;
+	remove)
+		for CMD in "${CMDS[@]}"
+		do
+			update-alternatives --remove $CMD "$DIR/$CMD.sh"
+		done
+
+		rm -rv "$DIR"
+		;;
+	*)
+		echo "Use ./install.sh <install|remove>"
+		;;
+esac
